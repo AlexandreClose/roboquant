@@ -24,6 +24,7 @@ import org.roboquant.charts.Chart
 import org.roboquant.common.Config
 import org.roboquant.common.Logging
 import org.roboquant.common.Size
+import org.roboquant.kandy.KandyChart
 import java.io.PrintWriter
 import java.io.StringWriter
 
@@ -141,6 +142,7 @@ class JupyterCore(
             "org.roboquant.brokers.*",
             "org.roboquant.jupyter.*",
             "org.roboquant.charts.*",
+            "org.roboquant.kandy.*",
             "java.time.Instant",
             "java.time.temporal.ChronoUnit",
             "org.roboquant.ta.*",
@@ -180,6 +182,9 @@ class JupyterCore(
             if (NotebookConfig.isolation) HTML(it.asHTMLPage(theme), true) else HTML(it.asHTML(theme), false)
         }
 
+        render<KandyChart> {
+            it.plot()
+        }
     }
 
 }
@@ -191,5 +196,10 @@ class JupyterCore(
  */
 @Suppress("unused")
 fun Chart.render() {
+    JupyterCore.host?.display(this, null)
+}
+
+@Suppress("unused")
+fun KandyChart.render() {
     JupyterCore.host?.display(this, null)
 }

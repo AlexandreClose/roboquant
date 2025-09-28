@@ -56,6 +56,11 @@
         </dependency>
         <dependency>
             <groupId>org.roboquant</groupId>
+            <artifactId>roboquant-kandy</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.roboquant</groupId>
             <artifactId>roboquant-avro</artifactId>
             <version>${project.version}</version>
         </dependency>
