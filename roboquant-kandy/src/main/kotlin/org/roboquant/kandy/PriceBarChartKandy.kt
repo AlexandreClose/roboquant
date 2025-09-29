@@ -4,7 +4,7 @@
 package org.roboquant.kandy
 
 import org.jetbrains.kotlinx.dataframe.DataFrame
-import org.jetbrains.kotlinx.dataframe.api.toDataFrame
+import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
 import org.jetbrains.kotlinx.kandy.dsl.plot
 import org.jetbrains.kotlinx.kandy.ir.Plot
 import org.jetbrains.kotlinx.statistics.kandy.layers.candlestick
@@ -31,28 +31,45 @@ class PriceBarChartKandy(
 ) : KandyChart() {
 
     override fun buildDataFrame(): DataFrame<*> {
-        val rows = feed.filter<PriceBar>(timeframe) { it.asset == asset }.map { (time, bar) ->
+        val times = mutableListOf<Any>()
+        val opens = mutableListOf<Double>()
+        val highs = mutableListOf<Double>()
+        val lows = mutableListOf<Double>()
+        val closes = mutableListOf<Double>()
+        val volumes = mutableListOf<Double>()
+        val dirs = mutableListOf<Int>()
+
+        feed.filter<PriceBar>(timeframe) { it.asset == asset }.forEach { (time, bar) ->
             val direction = if (bar.close >= bar.open) 1 else -1
             val t: Any = if (useTime) time else time.toString()
             val vol = if (bar.volume.isFinite()) bar.volume else 0.0
-            mapOf(
-                "time" to t,
-                "open" to bar.open,
-                "high" to bar.high,
-                "low" to bar.low,
-                "close" to bar.close,
-                "volume" to vol,
-                "direction" to direction
-            )
+
+            times += t
+            opens += bar.open
+            highs += bar.high
+            lows += bar.low
+            closes += bar.close
+            volumes += vol
+            dirs += direction
         }
-        return rows.toDataFrame()
+
+        return dataFrameOf(
+            "time" to times,
+            "open" to opens,
+            "high" to highs,
+            "low" to lows,
+            "close" to closes,
+            "volume" to volumes,
+            "direction" to dirs
+        )
     }
+
 
     override fun plot(): Plot {
         val df = buildDataFrame()
         return df.plot {
             candlestick(
-                x = "month",
+                x = "time",
                 open = "open",
                 high="high",
                 low="low",

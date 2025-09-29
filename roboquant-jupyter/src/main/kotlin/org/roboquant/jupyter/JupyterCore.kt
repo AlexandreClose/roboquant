@@ -1,19 +1,3 @@
-/*
- * Copyright 2020-2025 Neural Layer
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.roboquant.jupyter
 
 import org.jetbrains.kotlinx.jupyter.api.*
@@ -27,29 +11,19 @@ import org.roboquant.common.Size
 import org.roboquant.kandy.KandyChart
 import java.io.PrintWriter
 import java.io.StringWriter
+import org.jetbrains.kotlinx.kandy.ir.Plot
+import org.jetbrains.kotlinx.kandy.letsplot.export.toHTML
 
-/**
- * Present exceptions a bit nicer in notebooks
- */
 class RoboquantThrowableRenderer : ThrowableRenderer {
+    override fun accepts(throwable: Throwable): Boolean = true
 
-    override fun accepts(throwable: Throwable): Boolean {
-        return true
-    }
-
-    @Suppress("ComplexCondition")
     private fun String?.escapeHtml(): String {
         if (this == null) return ""
-        val str = this
         return buildString {
-            for (c in str) {
+            for (c in this@escapeHtml) {
                 if (c.code > 127 || c == '"' || c == '\'' || c == '<' || c == '>' || c == '&') {
-                    append("&#")
-                    append(c.code)
-                    append(';')
-                } else {
-                    append(c)
-                }
+                    append("&#${c.code};")
+                } else append(c)
             }
         }
     }
@@ -65,38 +39,17 @@ class RoboquantThrowableRenderer : ThrowableRenderer {
         """.trimIndent()
         return HTML(result, NotebookConfig.isolation)
     }
-
 }
 
-/**
- * Holds configuration for notebooks
- */
 object NotebookConfig {
-    /**
-     * Should all HTML output be rendered in iFrames, default is false
-     */
     var isolation: Boolean = false
-
-    /**
-     * Theme to use for rendering. Default is "auto"
-     */
     var theme = "auto"
-
 }
 
-/**
- * Integration with Kotlin-based Jupyter notebook kernels.
- * Some of the main features include:
- *
- * 1. Support for charts using Apache ECharts library
- * 2. Default imports
- * 3. Nicer exception handling
- */
 class JupyterCore(
     private val notebook: Notebook?,
     private val options: MutableMap<String, String?>
 ) : JupyterIntegration() {
-
 
     init {
         logger.debug { options.toMap().toString() }
@@ -121,11 +74,12 @@ class JupyterCore(
             if (it.isNotBlank()) deps.add("org.roboquant:roboquant-$it:$version")
         }
 
-        @Suppress("SpreadOperator")
+        deps.add("org.jetbrains.kotlinx:kandy-api:0.8.0")
+        deps.add("org.jetbrains.kotlinx:kandy-lets-plot:0.8.0")
+
         dependencies(*deps.toTypedArray())
 
-        // Applies to notebooks in Datalore
-        if (notebook.jupyterClientType == JupyterClientType.DATALORE) {
+        if (notebook?.jupyterClientType == JupyterClientType.DATALORE) {
             NotebookConfig.isolation = true
         }
 
@@ -149,7 +103,6 @@ class JupyterCore(
             "org.roboquant.avro.*",
         )
 
-        // Improve output of exceptions
         addThrowableRenderer(RoboquantThrowableRenderer())
 
         onLoaded {
@@ -158,9 +111,7 @@ class JupyterCore(
         }
 
         resources {
-            js("echarts") {
-                url(Chart.JSURL)
-            }
+            js("echarts") { url(Chart.JSURL) }
         }
 
         addRenderer(
@@ -176,30 +127,24 @@ class JupyterCore(
 
         render<Chart> {
             var theme = NotebookConfig.theme
-            if (theme == "auto" && notebook.jupyterClientType == JupyterClientType.KOTLIN_NOTEBOOK) {
+            if (theme == "auto" && notebook?.jupyterClientType == JupyterClientType.KOTLIN_NOTEBOOK) {
                 theme = if (notebook.currentColorScheme == ColorScheme.DARK) "dark" else "light"
             }
             if (NotebookConfig.isolation) HTML(it.asHTMLPage(theme), true) else HTML(it.asHTML(theme), false)
         }
 
-        render<KandyChart> {
-            it.plot()
+        render<Plot> {
+            HTML(it.toHTML(), NotebookConfig.isolation)
         }
+
+        // on continue de supporter tes KandyChart persos
+        render<KandyChart> { it.plot() }
     }
-
 }
 
-/**
- * Render a [Chart] in a Notebook cell.
- * When a chart is not the last statement in a Notebook cell, you can use this method to make sure it still
- * gets rendered.
- */
+// helpers d’affichage
 @Suppress("unused")
-fun Chart.render() {
-    JupyterCore.host?.display(this, null)
-}
+fun Chart.render() = JupyterCore.host?.display(this, null)
 
 @Suppress("unused")
-fun KandyChart.render() {
-    JupyterCore.host?.display(this, null)
-}
+fun KandyChart.render() = JupyterCore.host?.display(this, null)

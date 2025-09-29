@@ -34,7 +34,7 @@ interface MetricsJournal: Journal {
  * @property metrics Array<out Metric>
  * @constructor
  */
-class MemoryJournal(private vararg val metrics: Metric) : MetricsJournal {
+open class MemoryJournal(private vararg val metrics: Metric) : MetricsJournal {
 
     private val history = TreeMap<Instant, Map<String, Double>>()
 
