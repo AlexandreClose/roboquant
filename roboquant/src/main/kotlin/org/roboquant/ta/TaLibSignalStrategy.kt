@@ -40,7 +40,7 @@ import org.roboquant.strategies.Strategy
  */
 class TaLibSignalStrategy(
     private val initialCapacity: Int = 1,
-    private var block: TaLib.(asset: Asset, series: PriceBarSeries) -> Signal?
+    private var block: TaLib.(asset: Asset, series: PriceBarSeries) -> List<Signal>?
 ) : Strategy {
 
     private val history = mutableMapOf<Asset, PriceBarSeries>()
@@ -61,10 +61,10 @@ class TaLibSignalStrategy(
         fun breakout(entryPeriod: Int = 100, exitPeriod: Int = 50): TaLibSignalStrategy {
             return TaLibSignalStrategy { asset, series ->
                 when {
-                    recordHigh(series.high, entryPeriod) -> Signal.buy(asset, SignalType.BOTH)
-                    recordLow(series.low, entryPeriod) -> Signal.sell(asset, SignalType.BOTH)
-                    recordLow(series.low, exitPeriod) -> Signal.sell(asset, SignalType.EXIT)
-                    recordHigh(series.high, exitPeriod) -> Signal.buy(asset, SignalType.EXIT)
+                    recordHigh(series.high, entryPeriod) -> listOf(Signal.buy(asset, SignalType.BOTH))
+                    recordLow(series.low, entryPeriod) -> listOf(Signal.sell(asset, SignalType.BOTH))
+                    recordLow(series.low, exitPeriod) -> listOf(Signal.sell(asset, SignalType.EXIT))
+                    recordHigh(series.high, exitPeriod) -> listOf(Signal.buy(asset, SignalType.EXIT))
                     else -> null
                 }
             }
@@ -80,8 +80,8 @@ class TaLibSignalStrategy(
                 val (_, _, diff) = macd(prices, 12, 26, 9)
                 val (_, _, diff2) = macd(prices, 12, 26, 9, 1)
                 when {
-                    diff < 0.0 && diff2 >= 0.0 -> Signal.buy(asset)
-                    diff > 0.0 && diff2 <= 0.0 -> Signal.sell(asset)
+                    diff < 0.0 && diff2 >= 0.0 -> listOf(Signal.buy(asset))
+                    diff > 0.0 && diff2 <= 0.0 -> listOf(Signal.sell(asset))
                     else -> null
                 }
             }
@@ -102,8 +102,8 @@ class TaLibSignalStrategy(
                 val mid = (prices.high.last() + prices.low.last()) / 2.0
                 val curr = prices.close.last()
                 when {
-                    mid + atr > curr -> Signal.buy(asset)
-                    mid - atr < curr -> Signal.sell(asset)
+                    mid + atr > curr -> listOf(Signal.buy(asset))
+                    mid - atr < curr -> listOf(Signal.sell(asset))
                     else -> null
                 }
             }
@@ -128,7 +128,7 @@ class TaLibSignalStrategy(
             if (buffer.add(priceAction, time)) {
                 try {
                     val signal = block.invoke(taLib, asset, buffer)
-                    signals.addNotNull(signal)
+                    signals.addAll(signal?.toCollection(mutableListOf()) ?: emptyList())
                 } catch (ex: InsufficientData) {
                     buffer.increaseCapacity(ex.minSize)
                 }

@@ -62,7 +62,8 @@ class Signal(
     val asset: Asset,
     val rating: Double,
     val type: SignalType = BOTH,
-    val tag: String = ""
+    val tag: String = "",
+    val metadata: Map<String, Any> = emptyMap()
 ) {
 
     companion object {

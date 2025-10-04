@@ -13,6 +13,7 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import org.jetbrains.kotlinx.kandy.ir.Plot
 import org.jetbrains.kotlinx.kandy.letsplot.export.toHTML
+import org.jetbrains.kotlinx.kandy.letsplot.multiplot.model.PlotBunch
 
 class RoboquantThrowableRenderer : ThrowableRenderer {
     override fun accepts(throwable: Throwable): Boolean = true
@@ -134,6 +135,10 @@ class JupyterCore(
         }
 
         render<Plot> {
+            HTML(it.toHTML(), NotebookConfig.isolation)
+        }
+
+        render<PlotBunch> {
             HTML(it.toHTML(), NotebookConfig.isolation)
         }
 
