@@ -98,7 +98,7 @@ open class PriceBarSeries(capacity: Int) {
     /**
      * Update the buffer with a new [ohlcv] values and [time]. Return true if series is full.
      */
-    protected fun add(ohlcv: DoubleArray, time: Instant): Boolean {
+    fun add(ohlcv: DoubleArray, time: Instant): Boolean {
         assert(ohlcv.size == 5)
         openBuffer.add(ohlcv[0])
         highBuffer.add(ohlcv[1])
