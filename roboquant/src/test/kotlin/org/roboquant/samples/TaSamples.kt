@@ -22,7 +22,7 @@ internal class TaSamples {
                 diff < 0.0 && diff2 > 0.0 -> Signal.buy(asset)
                 diff > 0.0 && diff2 < 0.0 -> Signal.sell(asset)
                 else -> null
-            }
+            } as List<Signal>?
         }
 
         val feed = RandomWalk.lastYears(5)
@@ -62,7 +62,7 @@ internal class TaSamples {
 
                 tenkan < kijun && series.close.last() < kijun -> Signal.sell(asset)
                 else -> null
-            }
+            } as List<Signal>?
         }
 
 

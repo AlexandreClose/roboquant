@@ -16,7 +16,7 @@ data class Order(
     val size: Size,
     val limit: Double,
     val tif: TIF = TIF.DAY,
-    val tag: String = ""
+    var tag: String = ""
 )  {
 
     val buy: Boolean
